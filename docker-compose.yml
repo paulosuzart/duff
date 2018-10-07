@@ -1,0 +1,17 @@
+version: '2'
+services:
+    mongodb:
+        image: mongo:latest
+        container_name: duff-mongodb
+        ports:
+          - "27017:27017"
+        networks:
+          - db
+        volumes:
+          - $HOME/mongodb/data:/data
+
+networks:
+    db:
+        driver: bridge
+
+
