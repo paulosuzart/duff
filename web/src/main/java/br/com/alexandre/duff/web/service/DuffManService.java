@@ -1,18 +1,7 @@
 package br.com.alexandre.duff.web.service;
 
-import br.com.alexandre.duff.domain.DuffMan.Classification;
 import br.com.alexandre.duff.domain.DuffMan.Opinion;
 import br.com.alexandre.duff.domain.DuffMan.Opinion.Item;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import com.google.common.base.Joiner;
-
-import br.com.alexandre.duff.domain.DuffMan;
 import br.com.alexandre.duff.domain.Playlist;
 import br.com.alexandre.duff.domain.Temperature;
 import br.com.alexandre.duff.domain.Track;
@@ -20,6 +9,12 @@ import br.com.alexandre.duff.spotify.SpotifyService;
 import br.com.alexandre.duff.spotify.domain.PlaylistResponse;
 import br.com.alexandre.duff.spotify.domain.TracksResponse;
 import br.com.alexandre.duff.web.repository.DuffManRepository;
+import com.google.common.base.Joiner;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -37,9 +32,10 @@ public class DuffManService {
 
     return authorizationTokenMono.flatMap(authorizationToken ->
       duffmanRepository.classificateBeers(temperature)
-        .map(c -> new Item(c.getBeerStyle(), searchPlaylists(c.getBeerStyle(), authorizationToken)))
-        .collectList().map(o -> new Opinion(o))
-    );
+        .flatMap(classification ->
+          searchPlaylists(classification.getBeerStyle(), authorizationToken)
+            .collectList().map(playLists -> new Item(classification.getBeerStyle(), playLists))
+        ).collectList().map(Opinion::new));
 
   }
 
