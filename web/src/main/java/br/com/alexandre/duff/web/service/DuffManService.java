@@ -1,6 +1,8 @@
 package br.com.alexandre.duff.web.service;
 
+import br.com.alexandre.duff.domain.DuffMan.Classification;
 import br.com.alexandre.duff.domain.DuffMan.Opinion;
+import br.com.alexandre.duff.domain.DuffMan.Opinion.Item;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -18,57 +20,53 @@ import br.com.alexandre.duff.spotify.SpotifyService;
 import br.com.alexandre.duff.spotify.domain.PlaylistResponse;
 import br.com.alexandre.duff.spotify.domain.TracksResponse;
 import br.com.alexandre.duff.web.repository.DuffManRepository;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Service
 public class DuffManService {
 
-	@Autowired
-	private SpotifyService spotifyService;
+  @Autowired
+  private SpotifyService spotifyService;
 
-	@Autowired
-	private DuffManRepository duffmanRepository;
+  @Autowired
+  private DuffManRepository duffmanRepository;
 
-	public Mono<Opinion> askOpinion(final Temperature temperature) {
-		final Mono<String> authorizationTokenMono = spotifyService.getAuthorizationToken();
-		authorizationTokenMono.flatMap(authorizationToken -> {
+  public Mono<Opinion> askOpinion(final Temperature temperature) {
+    final Mono<String> authorizationTokenMono = spotifyService.getAuthorizationToken();
 
+    return authorizationTokenMono.flatMap(authorizationToken ->
+      duffmanRepository.classificateBeers(temperature)
+        .map(c -> new Item(c.getBeerStyle(), searchPlaylists(c.getBeerStyle(), authorizationToken)))
+        .collectList().map(o -> new Opinion(o))
+    );
 
-		});
-		return new DuffMan.Opinion(duffmanRepository.classificateBeers(temperature)
-				.stream()
-				.map(c -> new DuffMan.Opinion.Item(c.getBeerStyle(), searchPlaylists(c.getBeerStyle(), authorizationToken)))
-				.collect(Collectors.toList()));
-	}
+  }
 
-	private List<Playlist> searchPlaylists(final String beerStyle, final String authorizationToken) {
-		final PlaylistResponse playlistResponse = spotifyService.searchPlayLists(beerStyle, authorizationToken);
-		if (playlistResponse != null && playlistResponse.getPlaylists() != null && playlistResponse.getPlaylists().getItems() != null) {
-			return playlistResponse.getPlaylists().getItems()
-					.parallelStream()
-					.map(g -> {
-						final TracksResponse tracksResponse = spotifyService.getTracksFromPlaylist(g.getTracks().getHref(), authorizationToken);
-						return new Playlist(g.getName(), toListOfTracks(tracksResponse));
-					})
-					.collect(Collectors.toList());
-		} else {
-			return new ArrayList<>();
-		}
-	}
-	
-	private List<Track> toListOfTracks(final TracksResponse response) {
-		if (response != null && response.getItems() != null) {
-			return response.getItems().stream()
-					.map(t -> new Track(t.getTrack().getName(), Joiner.on(",")
-							.skipNulls()
-							.join(t.getTrack().getArtists()
-									.stream()
-									.map(a -> a.getName())
-									.collect(Collectors.toList())), t.getTrack().getExternal_urls().getSpotify()))
-					.collect(Collectors.toList());
-		} else {
-			return new ArrayList<Track>();
-		}
-	}
+  private Flux<Playlist> searchPlaylists(final String beerStyle, final String authorizationToken) {
+    final Mono<PlaylistResponse> playlistResponse = spotifyService.searchPlayLists(beerStyle, authorizationToken);
+
+    return playlistResponse.flatMapMany(response ->
+      Flux.fromIterable(response.getPlaylists().getItems())
+        .flatMap(g ->
+          spotifyService.getTracksFromPlaylist(g.getTracks().getHref(), authorizationToken)
+            .map(tracksResponse -> new Playlist(g.getName(), toListOfTracks(tracksResponse)))
+        ));
+  }
+
+  private List<Track> toListOfTracks(final TracksResponse response) {
+    if (response != null && response.getItems() != null) {
+      return response.getItems().stream()
+        .map(t -> new Track(t.getTrack().getName(), Joiner.on(",")
+          .skipNulls()
+          .join(t.getTrack().getArtists()
+            .stream()
+            .map(a -> a.getName())
+            .collect(Collectors.toList())), t.getTrack().getExternal_urls().getSpotify()))
+        .collect(Collectors.toList());
+    } else {
+      return new ArrayList<Track>();
+    }
+  }
 
 }
