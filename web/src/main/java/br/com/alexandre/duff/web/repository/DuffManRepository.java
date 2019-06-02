@@ -6,6 +6,7 @@ import static org.springframework.data.mongodb.core.aggregation.Aggregation.newA
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.project;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.sort;
 
+import br.com.alexandre.duff.domain.DuffMan.Classification;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -16,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.aggregation.LimitOperation;
 import org.springframework.data.mongodb.core.aggregation.MatchOperation;
@@ -28,6 +30,7 @@ import org.springframework.stereotype.Repository;
 import br.com.alexandre.duff.domain.Beer;
 import br.com.alexandre.duff.domain.DuffMan;
 import br.com.alexandre.duff.domain.Temperature;
+import reactor.core.publisher.Mono;
 
 @Repository
 public class DuffManRepository {
@@ -35,14 +38,14 @@ public class DuffManRepository {
 	private static final String BEER_COLLECTION = "beer";
 
 	@Autowired
-	private MongoTemplate mongoTemplate;
+	private ReactiveMongoTemplate mongoTemplate;
 	
 	@Value("${duffman.limit.classification:4}")
 	private int limit;
 	
 	private Logger logger = LoggerFactory.getLogger(DuffManRepository.class);
 
-	public List<DuffMan.Classification> classificateBeers(final Temperature temperature) {
+	public Mono<Classification> classificateBeers(final Temperature temperature) {
 		final Integer value = temperature.getTemperature();
 		logger.info("Running classificate beers using temperature: '{}'", value);
 		final MatchOperation match = match(Criteria

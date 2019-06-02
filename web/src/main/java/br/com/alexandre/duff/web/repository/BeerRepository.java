@@ -1,10 +1,13 @@
 package br.com.alexandre.duff.web.repository;
 
-import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.data.repository.PagingAndSortingRepository;
+import br.com.alexandre.duff.domain.Beer;
+import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.data.repository.reactive.ReactiveSortingRepository;
 import org.springframework.stereotype.Repository;
 
-import br.com.alexandre.duff.domain.Beer;
-
 @Repository
-public interface BeerRepository extends MongoRepository<Beer, String>, PagingAndSortingRepository<Beer, String> { }
+public interface BeerRepository extends
+  ReactiveCrudRepository<Beer, String>,
+  ReactiveSortingRepository<Beer, String> {
+
+}

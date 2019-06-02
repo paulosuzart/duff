@@ -17,6 +17,7 @@ import org.springframework.web.client.RestTemplate;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import org.springframework.web.reactive.function.client.WebClient;
 
 @Configuration
 @TestPropertySource(locations = { "classpath:test.properties" })
@@ -53,8 +54,8 @@ public class TestConfiguration {
 	
 	@Bean
 	public SpotifyService spotifyService(@Value("${spotify.clientId}") final String clientId, 
-			@Value("${spotify.clientSecret}") final String clientSecret, final RestTemplate restTemplate) {
-		final SpotifyService spotifyService = new SpotifyService(clientId, clientSecret, restTemplate);		
+			@Value("${spotify.clientSecret}") final String clientSecret, final WebClient.Builder builder) {
+		final SpotifyService spotifyService = new SpotifyService(clientId, clientSecret, builder);
 		spotifyService.setAuthorizationUrl("http://localhost:" + SERVER_PORT + "/api/token");
 		spotifyService.setBaseUrl("http://localhost:" + SERVER_PORT + "/v1");
 		

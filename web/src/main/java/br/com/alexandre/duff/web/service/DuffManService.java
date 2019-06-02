@@ -1,5 +1,6 @@
 package br.com.alexandre.duff.web.service;
 
+import br.com.alexandre.duff.domain.DuffMan.Opinion;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -17,6 +18,7 @@ import br.com.alexandre.duff.spotify.SpotifyService;
 import br.com.alexandre.duff.spotify.domain.PlaylistResponse;
 import br.com.alexandre.duff.spotify.domain.TracksResponse;
 import br.com.alexandre.duff.web.repository.DuffManRepository;
+import reactor.core.publisher.Mono;
 
 @Service
 public class DuffManService {
@@ -27,8 +29,12 @@ public class DuffManService {
 	@Autowired
 	private DuffManRepository duffmanRepository;
 
-	public DuffMan.Opinion askOpinion(final Temperature temperature) {
-		final String authorizationToken = spotifyService.getAuthorizationToken();
+	public Mono<Opinion> askOpinion(final Temperature temperature) {
+		final Mono<String> authorizationTokenMono = spotifyService.getAuthorizationToken();
+		authorizationTokenMono.flatMap(authorizationToken -> {
+
+
+		});
 		return new DuffMan.Opinion(duffmanRepository.classificateBeers(temperature)
 				.stream()
 				.map(c -> new DuffMan.Opinion.Item(c.getBeerStyle(), searchPlaylists(c.getBeerStyle(), authorizationToken)))
@@ -36,7 +42,7 @@ public class DuffManService {
 	}
 
 	private List<Playlist> searchPlaylists(final String beerStyle, final String authorizationToken) {
-		final PlaylistResponse playlistResponse = spotifyService.searchPlaylists(beerStyle, authorizationToken);
+		final PlaylistResponse playlistResponse = spotifyService.searchPlayLists(beerStyle, authorizationToken);
 		if (playlistResponse != null && playlistResponse.getPlaylists() != null && playlistResponse.getPlaylists().getItems() != null) {
 			return playlistResponse.getPlaylists().getItems()
 					.parallelStream()

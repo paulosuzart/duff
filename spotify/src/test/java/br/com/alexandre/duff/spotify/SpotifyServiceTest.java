@@ -51,7 +51,7 @@ public class SpotifyServiceTest {
 		
 		final String authorizationToken = this.spotifyService.getAuthorizationToken();
 		
-		final PlaylistResponse playlistResponse = this.spotifyService.searchPlaylists("Teste", authorizationToken);
+		final PlaylistResponse playlistResponse = this.spotifyService.searchPlayLists("Teste", authorizationToken);
 		assertNotNull(playlistResponse);
 		assertNotNull(playlistResponse.getPlaylists());
 		assertNotNull(playlistResponse.getPlaylists().getItems());
